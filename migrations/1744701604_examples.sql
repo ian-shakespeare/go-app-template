@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS examples (
+  id INTEGER PRIMARY KEY
+  , name TEXT NOT NULL
+  , description TEXT DEFAULT ''
+);
