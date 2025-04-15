@@ -14,7 +14,10 @@ build:
 migration:
 	$(GO) run $(SQL_MAIN) $(MIGRATION_NAME)
 
+lint:
+	golangci-lint run ./...
+
 clean:
 	rm -rf $(BIN) *.db
 
-.PHONY: all run
+.PHONY: all run lint
