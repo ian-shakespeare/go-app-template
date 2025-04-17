@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ian-shakespeare/go-app-template/internal/models"
+	"github.com/ian-shakespeare/go-app-template/internal/models/examples"
 )
 
 func createExample(w http.ResponseWriter, r *http.Request) {
@@ -16,13 +16,13 @@ func createExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var example models.NewExample
-	if err := json.Unmarshal(b, &example); err != nil {
+	var e examples.ExampleNew
+	if err := json.Unmarshal(b, &e); err != nil {
 		handleError(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	created, err := models.Examples.Create(example)
+	created, err := examples.Create(e)
 	if err != nil {
 		handleError(w, commonErrorCodes(err), err.Error())
 		return
@@ -32,7 +32,7 @@ func createExample(w http.ResponseWriter, r *http.Request) {
 }
 
 func listExamples(w http.ResponseWriter, r *http.Request) {
-	examples, err := models.Examples.All()
+	examples, err := examples.All()
 	if err != nil {
 		handleError(w, commonErrorCodes(err), err.Error())
 		return
@@ -50,13 +50,13 @@ func getExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	example, err := models.Examples.Get(exampleId)
+	e, err := examples.Get(exampleId)
 	if err != nil {
 		handleError(w, commonErrorCodes(err), err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, example)
+	writeJSON(w, http.StatusOK, e)
 }
 
 func updateExample(w http.ResponseWriter, r *http.Request) {
@@ -74,13 +74,13 @@ func updateExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var example models.EditExample
-	if err := json.Unmarshal(b, &example); err != nil {
+	var e examples.ExampleEdit
+	if err := json.Unmarshal(b, &e); err != nil {
 		handleError(w, http.StatusBadRequest, "bad request")
 		return
 	}
 
-	updated, err := models.Examples.Update(exampleId, example)
+	updated, err := examples.Update(exampleId, e)
 	if err != nil {
 		handleError(w, commonErrorCodes(err), err.Error())
 		return
@@ -98,7 +98,7 @@ func deleteExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := models.Examples.Delete(exampleId); err != nil {
+	if err := examples.Delete(exampleId); err != nil {
 		handleError(w, commonErrorCodes(err), err.Error())
 		return
 	}

@@ -1,11 +1,10 @@
-package models
+package examples
 
 import (
-	"database/sql"
 	"encoding/json"
-)
 
-var Examples exampleRepo
+	"github.com/ian-shakespeare/go-app-template/internal/models"
+)
 
 type Example struct {
 	ID          int    `json:"id"`
@@ -13,27 +12,23 @@ type Example struct {
 	Description string `json:"description"`
 }
 
-type NewExample struct {
+type ExampleNew struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
 }
 
-type EditExample struct {
+type ExampleEdit struct {
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
 }
 
-type exampleRepo struct {
-	db *sql.DB
-}
-
-func (e *exampleRepo) Create(example NewExample) (Example, error) {
+func Create(e ExampleNew) (Example, error) {
 	stmt := `
 	INSERT INTO examples (name, description)
 	VALUES (?,?)
 	`
 
-	res, err := e.db.Exec(stmt, example.Name, example.Description)
+	res, err := models.Conn().Exec(stmt, e.Name, e.Description)
 	if err != nil {
 		return Example{}, err
 	}
@@ -43,10 +38,10 @@ func (e *exampleRepo) Create(example NewExample) (Example, error) {
 		return Example{}, err
 	}
 
-	return e.Get(int(id))
+	return Get(int(id))
 }
 
-func (e *exampleRepo) Get(id int) (Example, error) {
+func Get(id int) (Example, error) {
 	query := `
 	SELECT json_object(
 		'id', e.id
@@ -57,7 +52,7 @@ func (e *exampleRepo) Get(id int) (Example, error) {
 	WHERE id = ?
 	`
 
-	row := e.db.QueryRow(query, id)
+	row := models.Conn().QueryRow(query, id)
 
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -69,7 +64,7 @@ func (e *exampleRepo) Get(id int) (Example, error) {
 	return ex, err
 }
 
-func (e *exampleRepo) All() ([]Example, error) {
+func All() ([]Example, error) {
 	query := `
 	SELECT json_group_array(
 		json_object(
@@ -81,7 +76,7 @@ func (e *exampleRepo) All() ([]Example, error) {
 	FROM examples e;
 	`
 
-	row := e.db.QueryRow(query)
+	row := models.Conn().QueryRow(query)
 
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -93,7 +88,7 @@ func (e *exampleRepo) All() ([]Example, error) {
 	return ex, err
 }
 
-func (e *exampleRepo) Update(id int, example EditExample) (Example, error) {
+func Update(id int, e ExampleEdit) (Example, error) {
 	stmt := `
 	UPDATE examples
 	SET
@@ -102,19 +97,19 @@ func (e *exampleRepo) Update(id int, example EditExample) (Example, error) {
 	WHERE id = ?
 	`
 
-	if _, err := e.db.Exec(stmt, example.Name, example.Description, id); err != nil {
+	if _, err := models.Conn().Exec(stmt, e.Name, e.Description, id); err != nil {
 		return Example{}, err
 	}
 
-	return e.Get(id)
+	return Get(id)
 }
 
-func (e *exampleRepo) Delete(id int) error {
+func Delete(id int) error {
 	stmt := `
 	DELETE FROM examples
 	WHERE id = ?
 	`
 
-	_, err := e.db.Exec(stmt, id)
+	_, err := models.Conn().Exec(stmt, id)
 	return err
 }
