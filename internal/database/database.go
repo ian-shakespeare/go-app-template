@@ -22,13 +22,20 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 
 	ver := migrationVersion(db)
 
-	for i := ver; i < len(entries); i++ {
+	i := ver
+	for ; i < len(entries); i++ {
 		migration, err := os.ReadFile(MIGRATION_DIR + entries[i].Name())
 		if err != nil {
 			return err
 		}
 
 		if _, err := db.ExecContext(ctx, string(migration)); err != nil {
+			return err
+		}
+	}
+
+	if i > ver {
+		if _, err := db.ExecContext(ctx, "INSERT INTO migrations (version) VALUES (?)", i); err != nil {
 			return err
 		}
 	}
