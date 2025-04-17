@@ -16,7 +16,9 @@ func main() {
 	if err := models.Init(DATABASE_FILE); err != nil {
 		log.Fatal(err)
 	}
-	defer models.Close()
+	defer func() {
+		_ = models.Close()
+	}()
 
 	router := controllers.Router()
 
