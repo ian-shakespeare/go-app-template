@@ -17,7 +17,7 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 
 	// Sort migrations alphanumerically
 	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].Name() > entries[j].Name()
+		return entries[i].Name() < entries[j].Name()
 	})
 
 	ver := migrationVersion(db)
