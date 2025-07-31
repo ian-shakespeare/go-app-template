@@ -1,23 +1,32 @@
+BIN := bin/go-app-template
 GO := go
-API_MAIN := cmd/api/main.go
-SQL_MAIN := cmd/sql/main.go
-BIN := bin/
+LINTER := golangci-lint
+GEN_MIGRATION := cmd/genmigration/main.go
+WEB := cmd/web/main.go
+RUN_FLAGS := -v
 
 all: run
 
 run:
-	$(GO) run $(API_MAIN)
+	$(GO) run $(WEB) $(RUN_FLAGS)
 
 build:
-	$(GO) build -o $(BIN)api $(API_MAIN)
+	$(GO) build -o $(BIN) $(WEB)
+
 
 migration:
-	$(GO) run $(SQL_MAIN) $(MIGRATION_NAME)
+	$(GO) run $(GEN_MIGRATION) $(MIGRATION_NAME)
+
+test:
+	$(GO) test ./internal/... -failfast
 
 lint:
-	golangci-lint run ./...
+	$(LINTER) run ./...
+
+fmt:
+	$(GO) fmt ./...
 
 clean:
-	rm -rf $(BIN) *.db
+	rm -rf $(BIN)
 
-.PHONY: all run lint
+.PHONY: down lint migration test up
