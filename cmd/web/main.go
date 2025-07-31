@@ -95,7 +95,7 @@ func checkDirPermission(path string) error {
 	if err != nil {
 		return err
 	}
-	file.Close()
+	_ = file.Close()
 
 	err = os.Remove(testFile)
 	return err
