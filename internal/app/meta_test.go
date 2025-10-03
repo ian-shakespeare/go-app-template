@@ -2,46 +2,31 @@ package app_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/ian-shakespeare/go-app-template/internal/app"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHealthCheck(t *testing.T) {
-	states := []app.AppState{
-		app.Starting,
-		app.Healthy,
-		app.Degraded,
-	}
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
 
-	for _, state := range states {
-		stateStr := string(state)
-		testName := fmt.Sprintf("ok %s", strings.ToLower(stateStr))
+		r := httptest.NewRequestWithContext(t.Context(), "GET", "/api/healthcheck", http.NoBody)
+		h := app.New(nil, nil)
 
-		t.Run(testName, func(t *testing.T) {
-			t.Parallel()
+		res, err := h.Test(r)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		defer res.Body.Close()
 
-			w := httptest.NewRecorder()
-			r := httptest.NewRequestWithContext(t.Context(), "GET", "/api/healthcheck", http.NoBody)
-			h := app.New(nil, nil, nil)
-			h.State = state
-
-			h.HealthCheck(w, r)
-			res := w.Result()
-			defer res.Body.Close()
-
-			var body app.HealthCheckResponse
-			decoder := json.NewDecoder(res.Body)
-			err := decoder.Decode(&body)
-
-			assert.Equal(t, http.StatusOK, res.StatusCode)
-			assert.NoError(t, err)
-			assert.Equal(t, stateStr, body.Status)
-		})
-	}
+		var body app.HealthCheckResponse
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(&body)
+		require.NoError(t, err)
+		assert.Equal(t, "OK", body.Status)
+	})
 }

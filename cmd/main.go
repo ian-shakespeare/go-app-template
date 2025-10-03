@@ -2,58 +2,23 @@ package main
 
 import (
 	"database/sql"
-	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/ian-shakespeare/go-app-template/internal/app"
 	"github.com/ian-shakespeare/go-app-template/internal/auth"
-	"github.com/ian-shakespeare/go-app-template/internal/database"
 	"github.com/ian-shakespeare/go-app-template/internal/env"
-	"github.com/ian-shakespeare/go-app-template/internal/viewrenderer"
-	"github.com/ian-shakespeare/go-app-template/migrations"
-	"github.com/ian-shakespeare/go-app-template/web/templates"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
 	dataDir = "data"
 )
-
-func loadDotEnv() error {
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		name := entry.Name()
-		if !strings.HasSuffix(name, ".env") {
-			continue
-		}
-
-		fin, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
-		if err != nil {
-			return err
-		}
-		defer fin.Close()
-
-		if err := env.Load(fin); err != nil {
-			return fmt.Errorf("%s: %w", name, err)
-		}
-	}
-
-	return nil
-}
 
 func setupDirectories(baseDir string) error {
 	dirs := []string{
@@ -102,10 +67,7 @@ func checkDirPermission(path string) error {
 }
 
 func main() {
-	verbosePtr := flag.Bool("v", false, "verbose")
-	flag.Parse()
-
-	_ = loadDotEnv()
+	_ = godotenv.Load()
 
 	baseDir := env.Fallback("BASE_DIR", "/var/lib/go-app-template")
 
@@ -123,26 +85,27 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := database.Migrate(db, migrations.FS); err != nil {
+	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	vr, err := viewrenderer.New(templates.FS)
+	migrator, err := migrate.NewWithDatabaseInstance("file:///migrations", "sqlite3", driver)
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := migrator.Up(); err != nil {
 		log.Fatal(err)
 	}
 
 	op := auth.NewGoogleOAuth2(env.Must(env.Get("GOOGLE_CLIENT_ID")), env.Must(env.Get("GOOGLE_CLIENT_SECRET")))
 
-	a := app.New(db, vr, op)
-
-	if verbosePtr != nil && *verbosePtr {
-		a.ToggleLogging()
-	}
+	a := app.New(db, op)
 
 	addr := ":8000"
 	fmt.Printf("Listening on %s\n", addr)
-	if err := http.ListenAndServe(addr, a); err != nil {
+	if err := a.Listen(addr); err != nil {
 		log.Fatal(err)
 	}
 }

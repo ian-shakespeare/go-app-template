@@ -23,3 +23,6 @@ tmp/
 
 # test coverage files
 coverage.*
+
+# generated files
+internal/database/

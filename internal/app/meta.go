@@ -1,16 +1,21 @@
 package app
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 type HealthCheckResponse struct {
 	Status string `json:"status"`
 }
 
-func (a *App) HealthCheck(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (a *App) HealthCheck(ctx context.Context, _ *EmptyRequest) (*Response[HealthCheckResponse], error) {
+	health := Response[HealthCheckResponse]{
+		Status: http.StatusOK,
+		Body: HealthCheckResponse{
+			Status: "OK",
+		},
+	}
 
-	var hcr HealthCheckResponse
-	hcr.Status = string(a.State)
-
-	_ = a.writeJSON(w, hcr)
+	return &health, nil
 }

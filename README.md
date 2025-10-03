@@ -4,9 +4,14 @@ A template Go web application using SQLite3.
 
 ## Getting Started
 
+This project uses [Migrate](https://github.com/golang-migrate/migrate) to create and apply migrations, and [sqlc](https://github.com/sqlc-dev/sqlc) to generate queries.
+
 ```sh
-# Generate a migration file
-MIGRATION_NAME=some_name make migration
+# Create a migration
+migrate create -dir database/migrations -ext sql $MIGRATION_NAME
+
+# Generate database handlers
+sqlc generate
 
 # Start the server
 make run
