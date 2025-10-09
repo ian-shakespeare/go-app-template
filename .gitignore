@@ -3,7 +3,7 @@ bin/
 
 # environment variables
 *.env
-!development.env
+!template.env
 
 # os and editor files
 .DS_Store

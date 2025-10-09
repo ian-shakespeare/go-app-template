@@ -2,23 +2,24 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/ian-shakespeare/go-app-template/database/migrations"
 	"github.com/ian-shakespeare/go-app-template/internal/app"
 	"github.com/ian-shakespeare/go-app-template/internal/auth"
 	"github.com/ian-shakespeare/go-app-template/internal/env"
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
-const (
-	dataDir = "data"
-)
+const dataDir = "data"
 
 func setupDirectories(baseDir string) error {
 	dirs := []string{
@@ -79,23 +80,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := sql.Open("sqlite3", filepath.Join(baseDir, dataDir, "go-app-template.db"))
+	db, err := sql.Open("sqlite", filepath.Join(baseDir, dataDir, "go-app-template.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	source, err := iofs.New(migrations.FS, ".")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	migrator, err := migrate.NewWithDatabaseInstance("file:///migrations", "sqlite3", driver)
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := migrator.Up(); err != nil {
+	migrator, err := migrate.NewWithInstance("sqlite", source, "", driver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Fatal(err)
 	}
 

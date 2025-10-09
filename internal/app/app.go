@@ -11,9 +11,20 @@ import (
 	"github.com/ian-shakespeare/go-app-template/internal/database"
 )
 
+type Request[T any] struct {
+	Body T
+}
+
 type Response[T any] struct {
 	Status int
 	Body   T
+}
+
+func NewResponse[T any](status int, body T) *Response[T] {
+	return &Response[T]{
+		Status: status,
+		Body:   body,
+	}
 }
 
 type EmptyRequest struct{}
@@ -35,7 +46,14 @@ func New(db *sql.DB, op auth.OAuth2Provider) *App {
 
 	api := huma.NewGroup(router, "/api")
 	huma.Get(api, "/healthcheck", a.HealthCheck)
-	huma.Post(api, "/tasks", a.CreateTask)
+
+	huma.Register(api, huma.Operation{
+		Method:      http.MethodPost,
+		Path:        "/tasks",
+		Summary:     "Create a task",
+		Description: "Create a task.",
+		Tags:        []string{"Tasks"},
+	}, a.CreateTask)
 
 	a.server = server
 	return a
