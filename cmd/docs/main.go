@@ -17,7 +17,7 @@ func main() {
 
 	if len(args) < 2 {
 		message := fmt.Appendf([]byte{}, "usage: %s [output path]", args[0])
-		os.Stdout.Write(message)
+		_, _ = os.Stdout.Write(message)
 		os.Exit(1)
 	}
 
