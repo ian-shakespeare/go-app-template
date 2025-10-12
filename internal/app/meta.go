@@ -9,7 +9,7 @@ type HealthCheckResponse struct {
 	Status string `json:"status"`
 }
 
-func (a *App) HealthCheck(ctx context.Context, _ *EmptyRequest) (*Response[HealthCheckResponse], error) {
+func (a *App) HealthCheck(ctx context.Context, _ *Empty) (*Response[HealthCheckResponse], error) {
 	health := Response[HealthCheckResponse]{
 		Status: http.StatusOK,
 		Body: HealthCheckResponse{

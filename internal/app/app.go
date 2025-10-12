@@ -27,7 +27,7 @@ func NewResponse[T any](status int, body T) *Response[T] {
 	}
 }
 
-type EmptyRequest struct{}
+type Empty struct{}
 
 type App struct {
 	server *fiber.App
@@ -54,6 +54,22 @@ func New(db *sql.DB, op auth.OAuth2Provider) *App {
 		Description: "Create a task.",
 		Tags:        []string{"Tasks"},
 	}, a.CreateTask)
+
+	huma.Register(api, huma.Operation{
+		Method:      http.MethodGet,
+		Path:        "/tasks",
+		Summary:     "List tasks",
+		Description: "List all tasks.",
+		Tags:        []string{"Tasks"},
+	}, a.ListTasks)
+
+	huma.Register(api, huma.Operation{
+		Method:      http.MethodPatch,
+		Path:        "/tasks/{id}",
+		Summary:     "Update a task",
+		Description: "Update a task, ignoring empty fields.",
+		Tags:        []string{"Tasks"},
+	}, a.UpdateTask)
 
 	a.server = server
 	return a

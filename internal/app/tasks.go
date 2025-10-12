@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"time"
 
@@ -12,51 +11,60 @@ import (
 type CreateTaskRequest struct {
 	Name        string     `json:"name"`
 	Description *string    `json:"description,omitempty"`
-	DueAt       *time.Time `json:"dueAt,omitempty"`
+	DueAt       *time.Time `json:"due_at,omitempty"`
 }
 
-type CreateTaskResponse struct {
-	Id          int        `json:"id"`
-	Name        string     `json:"name"`
-	Description *string    `json:"description"`
-	DueAt       *time.Time `json:"dueAt"`
-	CreatedAt   time.Time  `json:"createdAt"`
-}
+type CreateTaskResponse database.Task
 
 func (a *App) CreateTask(ctx context.Context, req *Request[CreateTaskRequest]) (*Response[CreateTaskResponse], error) {
-	var (
-		description sql.NullString
-		dueAt       sql.NullTime
-	)
-
-	if req.Body.Description != nil {
-		description.String = *req.Body.Description
-		description.Valid = true
-	}
-
-	if req.Body.DueAt != nil {
-		dueAt.Time = *req.Body.DueAt
-		dueAt.Valid = true
-	}
-
-	task, err := a.db.CreateTask(ctx, database.CreateTaskParams{Name: req.Body.Name, Description: description, DueAt: dueAt})
+	task, err := a.db.CreateTask(ctx, database.CreateTaskParams{
+		Name:        req.Body.Name,
+		Description: req.Body.Description,
+		DueAt:       req.Body.DueAt,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	res := CreateTaskResponse{
-		Id:        int(task.TaskID),
-		Name:      task.Name,
-		CreatedAt: task.CreatedAt,
+	return NewResponse(http.StatusCreated, CreateTaskResponse(task)), nil
+}
+
+type ListTasksResponse []database.Task
+
+func (a *App) ListTasks(ctx context.Context, _ *Empty) (*Response[ListTasksResponse], error) {
+	tasks, err := a.db.ListTasks(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if task.Description.Valid {
-		res.Description = &task.Description.String
+	if tasks == nil {
+		tasks = []database.Task{}
 	}
 
-	if task.DueAt.Valid {
-		res.DueAt = &task.DueAt.Time
+	return NewResponse(http.StatusOK, ListTasksResponse(tasks)), nil
+}
+
+type UpdateTaskRequest struct {
+	Id   int64 `path:"id" doc:"ID of the task to update"`
+	Body struct {
+		Name        string     `json:"name"`
+		Description *string    `json:"description"`
+		DueAt       *time.Time `json:"due_at"`
+	}
+}
+
+type UpdateTaskResponse database.Task
+
+func (a *App) UpdateTask(ctx context.Context, req *UpdateTaskRequest) (*Response[UpdateTaskResponse], error) {
+	task, err := a.db.UpdateTask(ctx, database.UpdateTaskParams{
+		TaskID:      req.Id,
+		Name:        req.Body.Name,
+		Description: req.Body.Description,
+		DueAt:       req.Body.DueAt,
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return NewResponse(http.StatusCreated, res), nil
+	return NewResponse(http.StatusOK, UpdateTaskResponse(task)), nil
 }

@@ -1,16 +1,20 @@
 BIN := bin/go-app-template
 GO := go
 LINTER := golangci-lint
-MAIN := cmd/main.go
+API := cmd/api/main.go
+DOCS := cmd/docs/main.go
 RUN_FLAGS := -v
 
 all: run
 
 build:
-	$(GO) build -o $(BIN) $(MAIN)
+	$(GO) build -o $(BIN) $(API)
 
 run:
-	$(GO) run $(MAIN) $(RUN_FLAGS)
+	$(GO) run $(API) $(RUN_FLAGS)
+
+docs:
+	$(GO) run $(DOCS) docs/openapi.yaml
 
 test:
 	$(GO) test ./internal/... -failfast
@@ -24,4 +28,4 @@ fmt:
 clean:
 	rm -rf $(BIN)
 
-.PHONY: run lint test up
+.PHONY: run docs lint test up
