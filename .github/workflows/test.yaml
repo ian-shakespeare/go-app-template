@@ -13,6 +13,10 @@ jobs:
           go-version: '1.24.x'
       - name: Install dependencies
         run: go get ./...
+      - name: Install sqlc
+        run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+      - name: Generate database handlers
+        run: sqlc generate
       - name: Build
         run: go build -v ./cmd/web/main.go
       - name: Test
